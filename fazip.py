@@ -1,25 +1,26 @@
-import face_recognition
-import cv2
+from face_recognition import face_encodings, compare_faces
+from cv2 import VideoCapture
 from time import clock
 from sys import exit
-import numpy as np
-import pymysql
-import subprocess
-import zipfile
+from numpy import fromstring
+from pymysql import connect
+from subprocess import run, DEVNULL
+from zipfile import ZipFile
+from configparser import ConfigParser
+from os import path
+from inspect import stack
 
 
 def get_face_encoding():
     faces = []
-    video_capture = cv2.VideoCapture(0)
+    video_capture = VideoCapture(0)
     start, current = clock(), 0
-    it = 0
 
+    print("Smile :)")
     while not faces and current < 5:
-        it += 1
-        print("LAP {}".format(it))
         current = clock() - start
         ret, frame = video_capture.read()
-        faces = face_recognition.face_encodings(frame)
+        faces = face_encodings(frame)
 
         if len(faces) > 1:
             print("Please, stay alone in front of the camera")
@@ -32,7 +33,7 @@ def get_face_encoding():
 
 
 def connect_to_db(user, password, host="localhost"):
-    return pymysql.connect(host, user, password)
+    return connect(host, user, password)
 
 
 def execute_db(database, sentence, get_info=False, commit=False):
@@ -73,6 +74,13 @@ def exists_db(database):
     return len(result) == 1
 
 
+def exists_user_db(database, name):
+    use_db(database)
+    sentence = 'SELECT COUNT(*) FROM Faces WHERE Name = "{}"'.format(name)
+    reponse = execute_db(database, sentence, get_info=True)[0][0] == 1
+    return reponse
+
+
 def use_db(database):
     sentence = 'USE fazip'
     execute_db(database, sentence)
@@ -92,17 +100,27 @@ def create_table_db(database):
     execute_db(database, sentence)
 
 
-def show_table_db(database):
+def get_users_db(database):
     use_db(database)
-    sentence = 'SELECT * FROM Faces'
-    print(execute_db(database, sentence, True))
+    sentence = 'SELECT COUNT(*) FROM Faces'
+    exists = execute_db(database, sentence, get_info=True)[0][0] > 0
+    mylist = []
+    if exists:
+        sentence = 'SELECT Name FROM Faces'
+        reponse = execute_db(database, sentence, True)
+        mylist = [element for name in reponse for element in name]
+        return mylist
+    return mylist
 
 
 def add_user_db(database, name):
-    use_db(database)
-    encoding = get_face_encoding()
-    sentence = 'INSERT INTO Faces VALUES("{}", "{}")'.format(name, encoding)
-    execute_db(database, sentence, commit=True)
+    if not exists_user_db(database, name):
+        encoding = get_face_encoding()
+        sentence = 'INSERT INTO Faces VALUES("{}","{}")'.format(name, encoding)
+        execute_db(database, sentence, commit=True)
+        return True
+    else:
+        return False
 
 
 def set_password_zip(database, password):
@@ -126,17 +144,23 @@ def get_password_zip(database):
 
 
 def remove_user_db(database, name):
-    use_db(database)
-    sentence = 'DELETE FROM Faces WHERE Name = "{}"'.format(name)
-    execute_db(database, sentence, commit=True)
+    if exists_user_db(database, name):
+        sentence = 'DELETE FROM Faces WHERE Name = "{}"'.format(name)
+        execute_db(database, sentence, commit=True)
+        return True
+    else:
+        return False
 
 
 def modify_user_db(database, name):
-    use_db(database)
-    encoding = get_face_encoding()
-    sentence = 'UPDATE Faces SET Encoding = "{}"\
-                WHERE Name = "{}"'.format(encoding, name)
-    execute_db(database, sentence, commit=True)
+    if exists_user_db(database, name):
+        encoding = get_face_encoding()
+        sentence = 'UPDATE Faces SET Encoding = "{}"\
+                    WHERE Name = "{}"'.format(encoding, name)
+        execute_db(database, sentence, commit=True)
+        return True
+    else:
+        return False
 
 
 def get_encoding_db(database):
@@ -147,7 +171,7 @@ def get_encoding_db(database):
 
     for array in reponse:
         array = array[0][1:-1]
-        a = np.fromstring(array, sep=' ')
+        a = fromstring(array, sep=' ')
         faces.append(a)
 
     return faces
@@ -155,7 +179,7 @@ def get_encoding_db(database):
 
 def face_in_db(database, face):
     faces = get_encoding_db(database)
-    match = face_recognition.compare_faces(faces, face)
+    match = compare_faces(faces, face)
     return True in match
 
 
@@ -163,7 +187,7 @@ def zip_files(database, zipname, files):
     password = get_password_zip(database)
     command = '7z a -p{} -y {} {}'.format(password, zipname, files)
     try:
-        subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
+        run(command, shell=True, stdout=DEVNULL)
         print("{} created successfully!".format(zipname))
     except Exception as e:
         print(e)
@@ -173,7 +197,7 @@ def unzip_files(database, zipname):
     face = get_face_encoding()
     if face_in_db(database, face):
         password = str.encode(get_password_zip(database))
-        with zipfile.ZipFile(zipname) as myzip:
+        with ZipFile(zipname) as myzip:
             try:
                 myzip.extractall(pwd=password)
                 print('{} extracted successfully!'.format(zipname))
@@ -181,6 +205,16 @@ def unzip_files(database, zipname):
                 print(e)
     else:
         print('ERROR: User not registered in the database!')
+
+
+def get_mysql_info():
+    config = ConfigParser()
+    mypath = path.dirname(path.abspath(stack()[0][1]))
+    config.read('{}/config.ini'.format(mypath))
+    host = config['mysql']['host']
+    user = config['mysql']['user']
+    password = config['mysql']['password']
+    return host, user, password
 
 
 if __name__ == '__main__':
@@ -198,17 +232,3 @@ if __name__ == '__main__':
     # zip_files(db, 'zipfile.zip', 'test2zip anothertest.txt')
     unzip_files(db, 'zipfile.zip')
     db.close()
-
-    '''
-    faces = get_face_encoding()
-
-
-    facescomp = get_face_encoding()
-
-    match = face_recognition.compare_faces([faces], facescomp)
-    print("MATCH? {}".format(match[0]))
-    print("SIZE: {}".format(len(faces)))
-    print("SIZE: {}".format(len(faces.tobytes())))
-
-    print("END {}".format(clock()))
-    '''
