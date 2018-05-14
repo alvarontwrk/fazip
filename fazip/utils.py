@@ -13,9 +13,14 @@ HEADER = chr(27) + "[2J" + """
 \t/_/  \__,_/ /___/_/ .___/
 \t                 /_/
 """
+BIN_PATH = '/usr/local/bin/fazip'
+MAIN_PATH = '{}/main.py'.format(PATH)
 
 
 if __name__ == '__main__':
+    print(HEADER)
     print(PATH)
     print(CONFIG_PATH)
     print(CONFIG_FILE)
+    print(BIN_PATH)
+    print(MAIN_PATH)

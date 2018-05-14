@@ -20,61 +20,66 @@ def do_compression(zipname, files):
     db.close()
 
 
+def do_list(zipname):
+    print("TODO")
+    pass
+
+
 def do_add_user(database):
-    print("\nEnter the new user's name")
+    print("\n[fazip] Enter the new user's name")
     user = input("[fazip]> ")
     if fazip.add_user_db(database, user):
-        print("User successfully registered!")
+        print("[fazip] User successfully registered!")
     else:
-        print("User already registered :(")
+        print("[fazip] User already registered :(")
 
 
 def do_edit_user(database):
-    print("\nEnter the user's name you want to edit")
+    print("\n[fazip] Enter the user's name you want to edit")
     user = input("[fazip]> ")
     if fazip.modify_user_db(database, user):
-        print("User successfully edited!")
+        print("[fazip] User successfully edited!")
     else:
-        print("User doesn't exists :(")
+        print("[fazip] User doesn't exists :(")
 
 
 def do_remove_user(database):
-    print("\nEnter the user's name you want to remove")
+    print("\n[fazip] Enter the user's name you want to remove")
     user = input("[fazip]> ")
     if fazip.remove_user_db(database, user):
-        print("User successfully removed!")
+        print("[fazip] User successfully removed!")
     else:
-        print("User doesn't exists :(")
+        print("[fazip] User doesn't exists :(")
 
 
 def do_list_users(database):
     users = fazip.get_users_db(database)
     if users:
-        print("\nThose are the registered users:")
+        print("\n[fazip] Those are the registered users:")
         for user in users:
             print("=> {}".format(user))
     else:
-        print("There are no users registered :(")
+        print("\n[fazip] There are no users registered :(")
 
 
 def do_change_pass(database):
-    print("WARNING: You will not be able to extract files" +
+    print("[fazip] WARNING: You will not be able to extract files" +
           "from previously created zip files")
-    verify = input("Proceed (y/[n])? ")
+    verify = input("[fazip] Proceed (y/[n])? ")
     if verify == 'y' or verify == 'yes':
-        oldp = getpass.getpass("Enter your actual password: ")
+        oldp = getpass.getpass("[fazip] Enter your actual password: ")
         if fazip.get_password_zip(database) == oldp:
-            first = getpass.getpass("Enter your new password: ")
-            second = getpass.getpass("Enter your new password again: ")
+            first = getpass.getpass("[fazip] Enter your new password: ")
+            second = getpass.getpass("[fazip] Enter your new password again: ")
             if first == second:
                 fazip.set_password_zip(database, first)
-                print("\nPassword changed successfully!")
-                print("Please log in again")
+                print("\n[fazip] Password changed successfully!")
+                print("[fazip] Please log in again")
                 sys.exit()
             else:
-                print("Those passwords didn't match.")
+                print("[fazip] Those passwords didn't match.")
         else:
-            print("Access denied")
+            print("[fazip] Access denied")
             sys.exit()
 
 
@@ -102,7 +107,7 @@ def do_configuration(login=False):
     if not login:
         pwd = getpass.getpass("Enter password: ")
         if not fazip.get_password_zip(db) == pwd:
-            print("Access denied")
+            print("[fazip] Access denied")
             sys.exit()
 
         print_menu(options)
@@ -111,7 +116,7 @@ def do_configuration(login=False):
         selection = int(input("\n[fazip]> "))
     except Exception:
         selection = -1
-        print("Seriously? That's not a number -.-")
+        print("[fazip] Seriously? That's not a number -.-")
 
     if options['exit_menu'] <= selection <= options['change_pass']:
         if selection == options['add_user']:
@@ -135,27 +140,41 @@ def do_configuration(login=False):
         db.close()
 
     else:
-        print("Wrong answer")
+        print("[fazip] Wrong answer")
 
     do_configuration(True)
 
 
-def print_help():
-    print("It looks like you missed something :(")
-    print("\tFormat: fazip x <zipfile>")
-    print("\tFormat: fazip a <zipfile> <files>")
+def print_help(redirected=False):
+    if redirected:
+        print("[fazip] It looks like you missed something :(")
+    else:
+        print("[fazip] Help:")
+    print("\n- Extract an existing zip file with original structure:")
+    print("\n  fazip x <zipfile>")
+    print("\n- List the contents of a zip file:")
+    print("\n  fazip l <zipfile>")
+    print("\n- Archive a file or directory:")
+    print("\n  fazip a <zipfile> <files>")
+    print("\n- Display this help:")
+    print("\n  fazip h")
+    print()
 
 
 def main():
     if 2 < len(sys.argv) == 3 and sys.argv[1] == 'x':
         do_extraction(sys.argv[2])
+    elif 2 < len(sys.argv) == 3 and sys.argv[1] == 'l':
+        do_list(sys.argv[2])
     elif len(sys.argv) >= 4 and sys.argv[1] == 'a':
         do_compression(sys.argv[2], sys.argv[3:])
     elif len(sys.argv) == 2 and sys.argv[1] == 'config':
         print(fazip.utils.HEADER)
         do_configuration()
-    else:
+    elif len(sys.argv) == 2 and sys.argv[1] == 'h':
         print_help()
+    else:
+        print_help(True)
 
 
 if __name__ == '__main__':

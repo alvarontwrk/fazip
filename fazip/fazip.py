@@ -15,19 +15,19 @@ def get_face_encoding():
     video_capture = cv2.VideoCapture(0)
     start, current = time.clock(), 0
 
-    print("Smile :)")
-    while not faces and current < 5:
+    print("[fazip] Smile :)")
+    while len(faces) != 1 and current < 5:
         current = time.clock() - start
         ret, frame = video_capture.read()
         faces = face_recognition.face_encodings(frame)
 
         if len(faces) > 1:
-            print("Please, stay alone in front of the camera")
+            print("[fazip] Please, stay alone in front of the camera")
 
     try:
         return faces[0]
     except Exception:
-        print("EXCEPTION: Face not found! :(")
+        print("[fazip] ERROR: Face not found! :(")
         sys.exit()
 
 
@@ -35,7 +35,7 @@ def connect_to_db(user, password, host="localhost"):
     try:
         return pymysql.connect(host, user, password)
     except Exception as e:
-        print('ERROR: {}'.format(e.args[1]))
+        print('[fazip] ERROR: {}'.format(e.args[1]))
         sys.exit()
 
 
@@ -69,9 +69,9 @@ def print_error_db(exception):
               1062: 'ERROR: User already registered!'}
     key = exception.args[0]
     if key in errors:
-        print(errors[exception.args[0]])
+        print("[fazip] {}".format(errors[exception.args[0]]))
     else:
-        print('--> {}'.format(exception))
+        print('[fazip] {}'.format(exception))
 
 
 def exists_db(database):
@@ -196,9 +196,9 @@ def zip_files(database, zipname, files):
     command = '7z a -p{} -y {} {}'.format(password, zipname, files)
     try:
         subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
-        print("{} created successfully!".format(zipname))
+        print("[fazip] {} created successfully!".format(zipname))
     except Exception as e:
-        print(e)
+        print("[fazip] {}".format(e))
 
 
 def unzip_files(database, zipname):
@@ -208,11 +208,11 @@ def unzip_files(database, zipname):
         with zipfile.ZipFile(zipname) as myzip:
             try:
                 myzip.extractall(pwd=password)
-                print('{} extracted successfully!'.format(zipname))
+                print('[fazip] {} extracted successfully!'.format(zipname))
             except Exception as e:
                 print(e)
     else:
-        print('ERROR: User not registered in the database!')
+        print('[fazip] ERROR: User not registered in the database!')
 
 
 def get_mysql_info():
