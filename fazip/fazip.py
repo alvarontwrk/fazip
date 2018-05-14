@@ -1,26 +1,26 @@
-from face_recognition import face_encodings, compare_faces
-from cv2 import VideoCapture
-from time import clock
-from sys import exit
-from numpy import fromstring
-from pymysql import connect
-from subprocess import run, DEVNULL
-from zipfile import ZipFile
-from configparser import ConfigParser
-from os import path
-from inspect import stack
+import face_recognition
+import cv2
+import time
+import sys
+import numpy as np
+import pymysql
+import subprocess
+import zipfile
+import configparser
+import os
+import inspect
 
 
 def get_face_encoding():
     faces = []
-    video_capture = VideoCapture(0)
-    start, current = clock(), 0
+    video_capture = cv2.VideoCapture(0)
+    start, current = time.clock(), 0
 
     print("Smile :)")
     while not faces and current < 5:
-        current = clock() - start
+        current = time.clock() - start
         ret, frame = video_capture.read()
-        faces = face_encodings(frame)
+        faces = face_recognition.face_encodings(frame)
 
         if len(faces) > 1:
             print("Please, stay alone in front of the camera")
@@ -29,11 +29,15 @@ def get_face_encoding():
         return faces[0]
     except Exception:
         print("EXCEPTION: Face not found! :(")
-        exit()
+        sys.exit()
 
 
 def connect_to_db(user, password, host="localhost"):
-    return connect(host, user, password)
+    try:
+        return pymysql.connect(host, user, password)
+    except Exception as e:
+        print('ERROR: {}'.format(e.args[1]))
+        sys.exit()
 
 
 def execute_db(database, sentence, get_info=False, commit=False):
@@ -52,6 +56,11 @@ def execute_db(database, sentence, get_info=False, commit=False):
 
 def create_db(database):
     sentence = 'CREATE DATABASE fazip'
+    execute_db(database, sentence)
+
+
+def remove_db(database):
+    sentence = 'DROP DATABASE fazip'
     execute_db(database, sentence)
 
 
@@ -171,7 +180,7 @@ def get_encoding_db(database):
 
     for array in reponse:
         array = array[0][1:-1]
-        a = fromstring(array, sep=' ')
+        a = np.fromstring(array, sep=' ')
         faces.append(a)
 
     return faces
@@ -179,7 +188,7 @@ def get_encoding_db(database):
 
 def face_in_db(database, face):
     faces = get_encoding_db(database)
-    match = compare_faces(faces, face)
+    match = face_recognition.compare_faces(faces, face)
     return True in match
 
 
@@ -187,7 +196,7 @@ def zip_files(database, zipname, files):
     password = get_password_zip(database)
     command = '7z a -p{} -y {} {}'.format(password, zipname, files)
     try:
-        run(command, shell=True, stdout=DEVNULL)
+        subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
         print("{} created successfully!".format(zipname))
     except Exception as e:
         print(e)
@@ -197,7 +206,7 @@ def unzip_files(database, zipname):
     face = get_face_encoding()
     if face_in_db(database, face):
         password = str.encode(get_password_zip(database))
-        with ZipFile(zipname) as myzip:
+        with zipfile.ZipFile(zipname) as myzip:
             try:
                 myzip.extractall(pwd=password)
                 print('{} extracted successfully!'.format(zipname))
@@ -208,9 +217,10 @@ def unzip_files(database, zipname):
 
 
 def get_mysql_info():
-    config = ConfigParser()
-    mypath = path.dirname(path.abspath(stack()[0][1]))
-    config.read('{}/config.ini'.format(mypath))
+    config = configparser.ConfigParser()
+    mypath = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))
+    mypath = mypath[:-6]
+    config.read('{}/config/config.ini'.format(mypath))
     host = config['mysql']['host']
     user = config['mysql']['user']
     password = config['mysql']['password']
