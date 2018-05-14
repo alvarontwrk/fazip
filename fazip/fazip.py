@@ -7,8 +7,7 @@ import pymysql
 import subprocess
 import zipfile
 import configparser
-import os
-import inspect
+from fazip import utils
 
 
 def get_face_encoding():
@@ -218,9 +217,7 @@ def unzip_files(database, zipname):
 
 def get_mysql_info():
     config = configparser.ConfigParser()
-    mypath = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))
-    mypath = mypath[:-6]
-    config.read('{}/config/config.ini'.format(mypath))
+    config.read(utils.CONFIG_FILE)
     host = config['mysql']['host']
     user = config['mysql']['user']
     password = config['mysql']['password']

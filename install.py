@@ -1,5 +1,3 @@
-import os
-import inspect
 import configparser
 import getpass
 import pathlib
@@ -7,8 +5,8 @@ from fazip import fazip
 
 
 def write_config():
-    host = input("=>Host: (default=localhost)")
-    user = input("=>User: (default=root)")
+    host = input("=>Host (default=localhost): ")
+    user = input("=>User (default=root): ")
     pwd = getpass.getpass("=>Password: ")
 
     if not host:
@@ -19,12 +17,10 @@ def write_config():
     config = configparser.ConfigParser()
     config['mysql'] = {'host': host, 'user': user, 'password': pwd}
 
-    project_path = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))
-    config_path = pathlib.Path('{}/config'.format(project_path))
+    config_path = pathlib.Path(fazip.utils.CONFIG_PATH)
     config_path.mkdir(exist_ok=True)
-    configfile_path = '{}/config.ini'.format(config_path)
 
-    with open(configfile_path, 'w') as configfile:
+    with open(fazip.utils.CONFIG_FILE, 'w') as configfile:
         config.write(configfile)
 
 
