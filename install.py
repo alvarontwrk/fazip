@@ -62,8 +62,12 @@ def create_symlink():
             print("[fazip] Error: You need root permissions.")
             sys.exit()
         else:
-            os.remove(fazip.utils.BIN_PATH)
-            os.symlink(fazip.utils.MAIN_PATH, fazip.utils.BIN_PATH)
+            try:
+                os.remove(fazip.utils.BIN_PATH)
+                os.symlink(fazip.utils.MAIN_PATH, fazip.utils.BIN_PATH)
+            except Exception:
+                print("[fazip] Error: You need root permissions.")
+                sys.exit()
     print("[fazip] Done!")
 
 

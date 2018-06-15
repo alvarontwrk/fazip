@@ -135,7 +135,7 @@ def do_configuration(login=False):
             sys.exit()
 
         elif selection == options['change_pass']:
-            do_change_pass()
+            do_change_pass(db)
 
         db.close()
 
@@ -156,6 +156,8 @@ def print_help(redirected=False):
     print("\n  fazip l <zipfile>")
     print("\n- Archive a file or directory:")
     print("\n  fazip a <zipfile> <files>")
+    print("\n- Configuration menu:")
+    print("\n  fazip config")
     print("\n- Display this help:")
     print("\n  fazip h")
     print()
