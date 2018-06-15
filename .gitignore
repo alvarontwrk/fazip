@@ -1,6 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 test/
-config/
+.config/
 *.py[cod]
 *$py.class
