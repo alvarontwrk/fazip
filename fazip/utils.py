@@ -3,7 +3,7 @@ import inspect
 
 
 PATH = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))[:-6]
-CONFIG_PATH = '{}/config'.format(PATH)
+CONFIG_PATH = '{}/.config'.format(PATH)
 CONFIG_FILE = '{}/config.ini'.format(CONFIG_PATH)
 HEADER = chr(27) + "[2J" + """
 \t    ____            _

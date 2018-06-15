@@ -23,7 +23,6 @@ def get_face_encoding():
 
         if len(faces) > 1:
             print("[fazip] Please, stay alone in front of the camera")
-
     try:
         return faces[0]
     except Exception:
