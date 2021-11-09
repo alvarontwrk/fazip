@@ -3,6 +3,6 @@ dlib==19.13.1
 face-recognition==1.2.2
 face-recognition-models==0.3.0
 numpy==1.14.5
-opencv-python==3.4.1.15
+opencv-python==4.2.0.32
 Pillow==8.3.2
 PyMySQL==0.8.1
